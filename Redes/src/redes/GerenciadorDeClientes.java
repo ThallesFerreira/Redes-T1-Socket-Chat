@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,7 +30,7 @@ public class GerenciadorDeClientes extends Thread{
     private BufferedReader leitor;
     private PrintWriter escritor;
     private static final Map<String,GerenciadorDeClientes> clientes = new HashMap<String,GerenciadorDeClientes>(); //Lista de clientes
-    
+    private static final Map<String,Grupo> grupos = new HashMap<String,Grupo>(); //Lista de grupos
     //1 gerenciador para cada cliente
     public GerenciadorDeClientes(Socket cliente){
         this.cliente = cliente;
@@ -41,16 +42,23 @@ public class GerenciadorDeClientes extends Thread{
     public void run(){
         //Exceção pode ser causada pelo cliente ter fechado a conexão, falta de internet etc.
         try {
+            String msg;
             //Pegando a mensagem from cliente
             //Usando BufferedReader para transformar os dados dos pacotes da mensagem de bytes para string
             leitor = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
             escritor = new PrintWriter(cliente.getOutputStream(), true); //Escrever os dados obtidos pela mensagem do cliente
-            escritor.println("Digite seu nome"); //Segundo paramentro (AutoFlush) do PrintWriter = true, manda esta mensagem direto para o cliente
-            String msg = leitor.readLine();
-            this.nomeCliente = msg.toLowerCase().replaceAll(",", "");
-            escritor.println("Bem vindo " + this.nomeCliente);
-            clientes.put(this.nomeCliente, this);
             
+            boolean adicionado = false;
+            do{
+                escritor.println("Digite seu nome"); //Segundo paramentro (AutoFlush) do PrintWriter = true, manda esta mensagem direto para o cliente
+                msg = leitor.readLine();
+                this.nomeCliente = msg.replaceAll(",", "");
+                if(!clientes.containsKey(this.nomeCliente)){
+                    escritor.println("Bem vindo " + this.nomeCliente);
+                    clientes.put(this.nomeCliente, this);
+                    adicionado = true;
+                }
+            }while(!adicionado);
             while(true){
                 msg = leitor.readLine();
                 //Fecha conexão, caso for enviada a mensagem de solicitação de fechamento
@@ -75,7 +83,42 @@ public class GerenciadorDeClientes extends Thread{
                     }
                     str.delete(str.length()-1, str.length());
                     escritor.println(str.toString());
-                } else{
+                }else if(msg.equals("::newgroup")){
+                    escritor.println("Digite nome do grupo");
+                    msg = leitor.readLine();
+                    if(!grupos.containsKey(msg)){
+                        Grupo novoGrupo = new Grupo("msg");
+                        novoGrupo.clientes.put(this.nomeCliente,this);
+                        grupos.put(msg, novoGrupo);//Criar grupo
+                        System.out.println("Grupo " + msg + " criado e usuário " + this.getNomeCliente() + " adicionado");
+                    }else{
+                        escritor.println("Grupo " + msg + " já existe");
+                    }
+                    
+                }else if(msg.startsWith("::entergrp")){
+                     String nomeGrupo = msg.substring(10, msg.length());
+                     System.out.println("Adicionando " + this.nomeCliente + " ao grupo " + nomeGrupo);
+                     if(grupos.containsKey(nomeGrupo) && !grupos.get(nomeGrupo).clientes.containsKey(this.nomeCliente)){//Verifica se o grupo existe e se o usuario ja não está no grupo
+                         grupos.get(nomeGrupo).clientes.put(this.nomeCliente,this);
+                         escritor.println("Adicionado ao grupo");
+                     }else{
+                         escritor.println("Grupo inexistente");
+                     }
+                }else if(msg.startsWith("::grp")){
+                     String nomeGrupo = msg.substring(5, msg.length());
+                     if(grupos.containsKey(nomeGrupo) && grupos.get(nomeGrupo).clientes.containsKey(this.nomeCliente)){//Verifica se o grupo existe e se o usuario está no grupo
+                         System.out.println("Mensagem de "+ this.nomeCliente + " para o grupo " + nomeGrupo);
+                         escritor.println("Digite uma mensagem para " + nomeGrupo);
+                         msg = leitor.readLine();
+                         for(Map.Entry<String,GerenciadorDeClientes> entry: grupos.get(nomeGrupo).clientes.entrySet()){
+                             if(!entry.equals(this))
+                                entry.getValue().escritor.println("Grupo "+ nomeGrupo+ " - " +this.nomeCliente + " : " + msg);
+                         }
+                     }else{
+                         System.out.println(this.nomeCliente + " tentou enviar uma mensagem não sucedida ao grupo " + nomeGrupo);
+                         escritor.println("Grupo inexistente ou você não pertence à esse grupo");
+                     }
+                }else{
                     escritor.println(this.nomeCliente + " disse: " + msg);
                 }
             }
