@@ -75,7 +75,7 @@ public class GerenciadorDeClientes extends Thread{
                         destinatario.getEscritor().println(this.nomeCliente + " disse: " + leitor.readLine());
                     }
                 //Lista o nome de todos os clientes conectados
-                } else if(msg.equals("::listar-clientes")){
+                } else if(msg.equals("::listclients")){
                     StringBuilder str = new StringBuilder(); //Mesma coisa do StringBuffer
                     for(String c: clientes.keySet()){
                         str.append(c);
@@ -95,8 +95,9 @@ public class GerenciadorDeClientes extends Thread{
                         escritor.println("Grupo " + msg + " já existe");
                     }
                     
-                }else if(msg.startsWith("::entergrp")){
-                     String nomeGrupo = msg.substring(10, msg.length());
+                }else if(msg.equals("::entergrp")){
+                     escritor.println("Digite nome do grupo");
+                     String nomeGrupo = leitor.readLine();
                      System.out.println("Adicionando " + this.nomeCliente + " ao grupo " + nomeGrupo);
                      if(grupos.containsKey(nomeGrupo) && !grupos.get(nomeGrupo).clientes.containsKey(this.nomeCliente)){//Verifica se o grupo existe e se o usuario ja não está no grupo
                          grupos.get(nomeGrupo).clientes.put(this.nomeCliente,this);

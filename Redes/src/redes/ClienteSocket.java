@@ -33,7 +33,7 @@ public class ClienteSocket{
                             String msg = leitor.readLine();
                             if(msg == null || msg.length() == 0)
                                 continue;
-                            System.out.println("Servidor disse: " + msg);
+                            System.out.println("$" + msg);
                         }
                     } catch (IOException ex) {
                         System.out.println("Não foi possível ler a mensagem do servidor");
