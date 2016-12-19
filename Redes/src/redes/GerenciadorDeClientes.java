@@ -55,6 +55,7 @@ public class GerenciadorDeClientes extends Thread{
                 this.nomeCliente = msg.replaceAll(",", "");
                 if(!clientes.containsKey(this.nomeCliente)){
                     escritor.println("Bem vindo " + this.nomeCliente);
+                    escritor.println("Digite \"::help\" para lista de comandos disponiveis");
                     clientes.put(this.nomeCliente, this);
                     adicionado = true;
                 }
@@ -63,6 +64,7 @@ public class GerenciadorDeClientes extends Thread{
                 msg = leitor.readLine();
                 //Fecha conexão, caso for enviada a mensagem de solicitação de fechamento
                 if(msg.equalsIgnoreCase("#bye")){
+                    clientes.remove(this.nomeCliente);
                     this.cliente.close();
                 } else if(msg.toLowerCase().startsWith("::msg")){
                     String nomeDestinatario = msg.substring(5, msg.length());
@@ -91,11 +93,12 @@ public class GerenciadorDeClientes extends Thread{
                         novoGrupo.clientes.put(this.nomeCliente,this);
                         grupos.put(msg, novoGrupo);//Criar grupo
                         System.out.println("Grupo " + msg + " criado e usuário " + this.getNomeCliente() + " adicionado");
+                        escritor.println("Grupo " + msg + " criado");
                     }else{
                         escritor.println("Grupo " + msg + " já existe");
                     }
                     
-                }else if(msg.equals("::entergrp")){
+                }else if(msg.equals("::entergroup")){
                      escritor.println("Digite nome do grupo");
                      String nomeGrupo = leitor.readLine();
                      System.out.println("Adicionando " + this.nomeCliente + " ao grupo " + nomeGrupo);
@@ -105,20 +108,27 @@ public class GerenciadorDeClientes extends Thread{
                      }else{
                          escritor.println("Grupo inexistente");
                      }
-                }else if(msg.startsWith("::grp")){
-                     String nomeGrupo = msg.substring(5, msg.length());
+                }else if(msg.startsWith("::group")){
+                     String nomeGrupo = msg.substring(7, msg.length());
                      if(grupos.containsKey(nomeGrupo) && grupos.get(nomeGrupo).clientes.containsKey(this.nomeCliente)){//Verifica se o grupo existe e se o usuario está no grupo
                          System.out.println("Mensagem de "+ this.nomeCliente + " para o grupo " + nomeGrupo);
                          escritor.println("Digite uma mensagem para " + nomeGrupo);
                          msg = leitor.readLine();
                          for(Map.Entry<String,GerenciadorDeClientes> entry: grupos.get(nomeGrupo).clientes.entrySet()){
-                             if(!entry.equals(this))
+                             if(!entry.getKey().equals(this.nomeCliente))
                                 entry.getValue().escritor.println("Grupo "+ nomeGrupo+ " - " +this.nomeCliente + " : " + msg);
                          }
                      }else{
                          System.out.println(this.nomeCliente + " tentou enviar uma mensagem não sucedida ao grupo " + nomeGrupo);
                          escritor.println("Grupo inexistente ou você não pertence à esse grupo");
                      }
+                }else if(msg.equals("::help")){
+                     escritor.println("#bye: Fecha conexão");
+                     escritor.println("::listclients: Lista os usuários ativos");
+                     escritor.println("::msg(User): Envia mensagem para o usuário(User)");
+                     escritor.println("::newgroup: Cria novo grupo e adiciona o usuário ao grupo");
+                     escritor.println("::entergroup: Insere usuário no grupo");
+                     escritor.println("::group(Group): Envia mensagem para os usuários do grupo(Group)");
                 }else{
                     escritor.println(this.nomeCliente + " disse: " + msg);
                 }

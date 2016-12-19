@@ -33,7 +33,7 @@ public class ClienteSocket{
                             String msg = leitor.readLine();
                             if(msg == null || msg.length() == 0)
                                 continue;
-                            System.out.println("$" + msg);
+                            System.out.println((char)27 + "[32m$" + msg + (char)27 + "[0m");
                         }
                     } catch (IOException ex) {
                         System.out.println("Não foi possível ler a mensagem do servidor");
